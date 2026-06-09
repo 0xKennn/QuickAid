@@ -6,7 +6,7 @@ import { getUserProfile } from '../services/auth';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser]       = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,8 +25,15 @@ export function AuthProvider({ children }) {
     return unsub;
   }, []);
 
+  async function refreshProfile() {
+    if (user) {
+      const p = await getUserProfile(user.uid);
+      setProfile(p);
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading }}>
+    <AuthContext.Provider value={{ user, profile, loading, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

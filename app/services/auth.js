@@ -3,22 +3,19 @@ import {
   signInWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
-export async function registerUser(email, password, role, profileData) {
+export async function registerUser(email, password, profileData) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
-  const uid = cred.user.uid;
-
-  // Responders start as pending until manually verified in Firestore
-  const assignedRole = role === 'responder' ? 'responder_pending' : 'user';
+  const uid  = cred.user.uid;
 
   await setDoc(doc(db, 'users', uid), {
     uid,
     email,
-    role: assignedRole,
+    name:      profileData.name,
+    phone:     profileData.phone || '',
     createdAt: new Date().toISOString(),
-    ...profileData
   });
 
   return cred.user;
@@ -37,4 +34,11 @@ export async function logoutUser() {
 export async function getUserProfile(uid) {
   const snap = await getDoc(doc(db, 'users', uid));
   return snap.exists() ? snap.data() : null;
+}
+
+export async function updateUserProfile(uid, data) {
+  await updateDoc(doc(db, 'users', uid), {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  });
 }
