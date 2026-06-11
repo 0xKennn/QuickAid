@@ -1,27 +1,57 @@
 import React, { useState } from 'react';
+
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, SafeAreaView, StatusBar,
-  KeyboardAvoidingView, Platform, ScrollView
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
+
+import {
+  User,
+  Mail,
+  Phone,
+  Lock,
+  Eye,
+  EyeOff,
+  Heart,
+  ShieldCheck,
+} from 'lucide-react-native';
+
 import { registerUser } from '../../services/auth';
 
 export default function RegisterScreen({ navigation }) {
-  const [name, setName]         = useState('');
-  const [email, setEmail]       = useState('');
-  const [phone, setPhone]       = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading]   = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleRegister() {
     if (!name || !email || !password) {
-      Alert.alert('Missing fields', 'Please fill in all required fields.');
+      Alert.alert(
+        'Missing fields',
+        'Please fill in all required fields.'
+      );
       return;
     }
+
     setLoading(true);
+
     try {
-      await registerUser(email, password, { name, phone });
+      await registerUser(email, password, {
+        name,
+        phone,
+      });
     } catch (err) {
       Alert.alert('Registration failed', err.message);
     } finally {
@@ -31,116 +61,172 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#B91C1C" />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#F4F6F5"
+      />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-
-          {/* Hero */}
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* HERO */}
           <View style={s.hero}>
             <View style={s.logoBox}>
-              <Text style={s.logoIcon}>➕</Text>
+              <Heart size={32} color="#5DBB9A" />
             </View>
-            <Text style={s.appName}>Create account</Text>
+
+            <Text style={s.appName}>
+              Create Account
+            </Text>
+
             <Text style={s.appTagline}>
-              For DRRM officers &amp; medical professionals
+              Join QuickAid and access AI-powered
+              emergency medical assistance.
             </Text>
           </View>
 
-          {/* Form card */}
+          {/* CARD */}
           <View style={s.card}>
 
-            {/* Step indicator */}
+            {/* STEP INDICATOR */}
             <View style={s.stepRow}>
               <View style={[s.stepDot, s.stepActive]} />
               <View style={s.stepDot} />
             </View>
 
-            {/* Full name */}
-            <Text style={s.fieldLabel}>Full name</Text>
+            {/* FULL NAME */}
+            <Text style={s.fieldLabel}>
+              FULL NAME
+            </Text>
+
             <View style={s.fieldWrap}>
-              <Text style={s.fieldIcon}>👤</Text>
+              <User size={18} color="#94A3B8" />
+
               <TextInput
                 style={s.fieldInput}
                 value={name}
                 onChangeText={setName}
                 placeholder="Juan dela Cruz"
-                placeholderTextColor="#BBB"
+                placeholderTextColor="#A0A0A0"
               />
             </View>
 
-            {/* Email */}
-            <Text style={s.fieldLabel}>Email address</Text>
+            {/* EMAIL */}
+            <Text style={s.fieldLabel}>
+              EMAIL ADDRESS
+            </Text>
+
             <View style={s.fieldWrap}>
-              <Text style={s.fieldIcon}>✉️</Text>
+              <Mail size={18} color="#94A3B8" />
+
               <TextInput
                 style={s.fieldInput}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="you@drrm.gov.ph"
-                placeholderTextColor="#BBB"
+                placeholder="you@example.com"
+                placeholderTextColor="#A0A0A0"
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
             </View>
 
-            {/* Phone */}
-            <Text style={s.fieldLabel}>Phone number</Text>
+            {/* PHONE */}
+            <Text style={s.fieldLabel}>
+              PHONE NUMBER
+            </Text>
+
             <View style={s.fieldWrap}>
-              <Text style={s.fieldIcon}>📱</Text>
+              <Phone size={18} color="#94A3B8" />
+
               <TextInput
                 style={s.fieldInput}
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="+63 912 345 6789"
-                placeholderTextColor="#BBB"
+                placeholderTextColor="#A0A0A0"
                 keyboardType="phone-pad"
               />
             </View>
 
-            {/* Password */}
-            <Text style={s.fieldLabel}>Password</Text>
+            {/* PASSWORD */}
+            <Text style={s.fieldLabel}>
+              PASSWORD
+            </Text>
+
             <View style={s.fieldWrap}>
-              <Text style={s.fieldIcon}>🔒</Text>
+              <Lock size={18} color="#94A3B8" />
+
               <TextInput
                 style={s.fieldInput}
                 value={password}
                 onChangeText={setPassword}
-                placeholder="At least 6 characters"
-                placeholderTextColor="#BBB"
+                placeholder="Create a password"
+                placeholderTextColor="#A0A0A0"
                 secureTextEntry={!showPass}
               />
-              {/* <TouchableOpacity onPress={() => setShowPass(v => !v)} style={s.eyeBtn}>
-                <Text style={s.eyeIcon}>{showPass ? '🙈' : '👁️'}</Text>
-                  </TouchableOpacity> */}
+
+              <TouchableOpacity
+                onPress={() => setShowPass(!showPass)}
+              >
+                {showPass ? (
+                  <EyeOff size={18} color="#94A3B8" />
+                ) : (
+                  <Eye size={18} color="#94A3B8" />
+                )}
+              </TouchableOpacity>
             </View>
 
-            {/* Disclaimer */}
-            <View style={s.disclaimer}>
-              <Text style={s.disclaimerText}>
-                🏥 QuickAid is intended for DRRM officers and licensed medical professionals only.
+            {/* NOTICE */}
+            <View style={s.noticeBox}>
+              <ShieldCheck
+                size={18}
+                color="#5DBB9A"
+              />
+
+              <Text style={s.noticeText}>
+                QuickAid is designed for emergency
+                response teams and healthcare professionals.
               </Text>
             </View>
 
-            {/* Create account button */}
+            {/* BUTTON */}
             <TouchableOpacity
-              style={[s.btnPrimary, loading && { opacity: 0.7 }]}
+              style={[
+                s.btnPrimary,
+                loading && { opacity: 0.7 },
+              ]}
               onPress={handleRegister}
               disabled={loading}
             >
-              {loading
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={s.btnPrimaryText}>Create Account</Text>
-              }
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={s.btnPrimaryText}>
+                  Create Account
+                </Text>
+              )}
             </TouchableOpacity>
 
-            {/* Login link */}
+            {/* FOOTER */}
             <View style={s.bottomRow}>
-              <Text style={s.bottomText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={s.bottomLink}>Sign In</Text>
+              <Text style={s.bottomText}>
+                Already have an account?
+              </Text>
+
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate('Login')
+                }
+              >
+                <Text style={s.bottomLink}>
+                  Sign In
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -152,41 +238,168 @@ export default function RegisterScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  safe:          { flex: 1, backgroundColor: '#B91C1C' },
-  hero:          { backgroundColor: '#B91C1C', alignItems: 'center',
-                   paddingTop: 40, paddingBottom: 32, paddingHorizontal: 24 },
-  logoBox:       { width: 60, height: 60, borderRadius: 15,
-                   backgroundColor: 'rgba(255,255,255,0.18)',
-                   alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  logoIcon:      { fontSize: 28 },
-  appName:       { fontSize: 24, fontWeight: '700', color: '#fff', marginBottom: 6 },
-  appTagline:    { fontSize: 13, color: 'rgba(255,255,255,0.75)',
-                   textAlign: 'center', lineHeight: 20 },
-  card:          { flex: 1, backgroundColor: '#fff', borderTopLeftRadius: 28,
-                   borderTopRightRadius: 28, paddingHorizontal: 24,
-                   paddingTop: 28, paddingBottom: 40 },
-  stepRow:       { flexDirection: 'row', justifyContent: 'center',
-                   gap: 6, marginBottom: 24 },
-  stepDot:       { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FECACA' },
-  stepActive:    { width: 20, borderRadius: 4, backgroundColor: '#B91C1C' },
-  fieldLabel:    { fontSize: 11, fontWeight: '600', color: '#555',
-                   textTransform: 'uppercase', letterSpacing: 0.6,
-                   marginBottom: 8, marginTop: 16 },
-  fieldWrap:     { flexDirection: 'row', alignItems: 'center', borderWidth: 1,
-                   borderColor: '#E5E7EB', borderRadius: 12,
-                   backgroundColor: '#F9FAFB', paddingHorizontal: 14, gap: 10 },
-  fieldIcon:     { fontSize: 17 },
-  fieldInput:    { flex: 1, fontSize: 14, color: '#111', paddingVertical: 13 },
-  eyeBtn:        { padding: 4 },
-  eyeIcon:       { fontSize: 17 },
-  disclaimer:    { backgroundColor: '#FEE2E2', borderRadius: 10,
-                   padding: 12, marginTop: 20, marginBottom: 4 },
-  disclaimerText:{ fontSize: 12, color: '#B91C1C', lineHeight: 18 },
-  btnPrimary:    { backgroundColor: '#B91C1C', borderRadius: 12,
-                   paddingVertical: 16, alignItems: 'center',
-                   marginTop: 20, marginBottom: 24 },
-  btnPrimaryText:{ fontSize: 16, fontWeight: '700', color: '#fff' },
-  bottomRow:     { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  bottomText:    { fontSize: 14, color: '#888' },
-  bottomLink:    { fontSize: 14, color: '#B91C1C', fontWeight: '600' },
+  safe: {
+    flex: 1,
+    backgroundColor: '#F4F6F5',
+  },
+
+  hero: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 24,
+  },
+
+  logoBox: {
+    width: 74,
+    height: 74,
+    borderRadius: 24,
+    backgroundColor: '#EAF8F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+
+  appName: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#25302B',
+    marginBottom: 8,
+  },
+
+  appTagline: {
+    fontSize: 15,
+    color: '#7C8B85',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 20,
+  },
+
+  card: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    borderRadius: 32,
+    paddingHorizontal: 22,
+    paddingTop: 30,
+    paddingBottom: 36,
+
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 18,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+
+    elevation: 5,
+  },
+
+  stepRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 28,
+  },
+
+  stepDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: '#D9E6E0',
+    marginHorizontal: 4,
+  },
+
+  stepActive: {
+    width: 28,
+    backgroundColor: '#5DBB9A',
+  },
+
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6F7B76',
+    marginBottom: 10,
+    marginTop: 18,
+    letterSpacing: 1,
+  },
+
+  fieldWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 58,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#DFE7E3',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+  },
+
+  fieldInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#25302B',
+    marginLeft: 12,
+  },
+
+  noticeBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#EEF8F4',
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+
+  noticeText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#5E746B',
+    lineHeight: 20,
+    marginLeft: 10,
+  },
+
+  btnPrimary: {
+    height: 58,
+    borderRadius: 999,
+    backgroundColor: '#5DBB9A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 26,
+
+    shadowColor: '#5DBB9A',
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+
+    elevation: 4,
+  },
+
+  btnPrimaryText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 28,
+  },
+
+  bottomText: {
+    fontSize: 14,
+    color: '#8B9590',
+  },
+
+  bottomLink: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#5DBB9A',
+    marginLeft: 4,
+  },
 });
+

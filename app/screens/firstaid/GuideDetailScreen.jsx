@@ -1,153 +1,397 @@
-import React, { useState, useEffect } from 'react';
+import React, {
+  useState,
+  useEffect,
+} from 'react';
+
 import {
-  View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, SafeAreaView, StatusBar, Alert
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+
 import * as Speech from 'expo-speech';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CATEGORIES, SEVERITY } from '../../data/categories';
 
-export default function GuideDetailScreen({ route, navigation }) {
-  const { guide }                   = route.params;
-  const [lang, setLang]             = useState('en');
-  const [speaking, setSpeaking]     = useState(false);
-  const [activeStep, setActiveStep] = useState(null);
+import {
+  CATEGORIES,
+  SEVERITY,
+} from '../../data/categories';
 
-  const cat     = CATEGORIES.find(c => c.id === guide.categoryId);
-  const sev     = SEVERITY[guide.severity];
-  const content = guide.content[lang] || guide.content.en;
+export default function GuideDetailScreen({
+  route,
+  navigation,
+}) {
+  const { guide } = route.params;
+
+  const [lang, setLang] =
+    useState('en');
+
+  const [speaking, setSpeaking] =
+    useState(false);
+
+  const [activeStep, setActiveStep] =
+    useState(null);
+
+  const cat = CATEGORIES.find(
+    c => c.id === guide.categoryId
+  );
+
+  const sev =
+    SEVERITY[guide.severity];
+
+  const content =
+    guide.content[lang] ||
+    guide.content.en;
 
   useEffect(() => {
-    AsyncStorage.getItem('appLanguage').then(l => { if (l) setLang(l); });
-    return () => { Speech.stop(); };
+    AsyncStorage.getItem(
+      'appLanguage'
+    ).then(l => {
+      if (l) setLang(l);
+    });
+
+    return () => {
+      Speech.stop();
+    };
   }, []);
 
-  async function speakStep(step, index) {
+  async function speakStep(
+    step,
+    index
+  ) {
     await Speech.stop();
+
     setSpeaking(true);
     setActiveStep(index);
-    Speech.speak(`Step ${index + 1}. ${step}`, {
-      language: lang === 'fil' ? 'fil-PH' : 'en-US',
-      onDone:  () => { setSpeaking(false); setActiveStep(null); },
-      onError: () => { setSpeaking(false); setActiveStep(null); },
-    });
+
+    Speech.speak(
+      `Step ${index + 1}. ${step}`,
+      {
+        language:
+          lang === 'fil'
+            ? 'fil-PH'
+            : 'en-US',
+
+        onDone: () => {
+          setSpeaking(false);
+          setActiveStep(null);
+        },
+
+        onError: () => {
+          setSpeaking(false);
+          setActiveStep(null);
+        },
+      }
+    );
   }
 
   async function speakAll() {
     await Speech.stop();
+
     setSpeaking(true);
-    const fullText = content.steps.map((s, i) => `Step ${i + 1}. ${s}`).join('. ');
+
+    const fullText =
+      content.steps
+        .map(
+          (s, i) =>
+            `Step ${
+              i + 1
+            }. ${s}`
+        )
+        .join('. ');
+
     Speech.speak(fullText, {
-      language: lang === 'fil' ? 'fil-PH' : 'en-US',
-      onDone:  () => { setSpeaking(false); setActiveStep(null); },
-      onError: () => { setSpeaking(false); setActiveStep(null); },
+      language:
+        lang === 'fil'
+          ? 'fil-PH'
+          : 'en-US',
+
+      onDone: () => {
+        setSpeaking(false);
+        setActiveStep(null);
+      },
+
+      onError: () => {
+        setSpeaking(false);
+        setActiveStep(null);
+      },
     });
   }
 
   async function stopSpeaking() {
     await Speech.stop();
+
     setSpeaking(false);
     setActiveStep(null);
   }
 
   async function toggleLang() {
-    const next = lang === 'en' ? 'fil' : 'en';
+    const next =
+      lang === 'en'
+        ? 'fil'
+        : 'en';
+
     await Speech.stop();
+
     setSpeaking(false);
     setActiveStep(null);
+
     setLang(next);
-    await AsyncStorage.setItem('appLanguage', next);
+
+    await AsyncStorage.setItem(
+      'appLanguage',
+      next
+    );
   }
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#B91C1C" />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#F7FAF9"
+      />
 
-      {/* Header */}
-      <View style={[s.header, { backgroundColor: '#B91C1C' }]}>
+      {/* HEADER */}
+      <View style={s.header}>
+
         <View style={s.headerTop}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-            <Text style={s.backText}>‹ Back</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.langBtn} onPress={toggleLang}>
-            <Text style={s.langBtnText}>
-              {lang === 'en' ? '🇵🇭 FIL' : '🇺🇸 EN'}
+
+          <TouchableOpacity
+            onPress={() =>
+              navigation.goBack()
+            }
+            style={s.backBtn}
+          >
+            <Text style={s.backText}>
+              ‹ Back
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={s.langBtn}
+            onPress={toggleLang}
+          >
+            <Text style={s.langBtnText}>
+              {lang === 'en'
+                ? '🇵🇭 FIL'
+                : '🇺🇸 EN'}
+            </Text>
+          </TouchableOpacity>
+
         </View>
+
         <View style={s.headerBody}>
-          <View style={[s.headerIcon, { backgroundColor: cat.bg }]}>
-            <Text style={s.headerEmoji}>{cat.emoji}</Text>
+
+          <View
+            style={[
+              s.headerIcon,
+              {
+                backgroundColor:
+                  cat.bg,
+              },
+            ]}
+          >
+            <Text style={s.headerEmoji}>
+              {cat.emoji}
+            </Text>
           </View>
+
           <View style={{ flex: 1 }}>
-            <Text style={s.headerTitle}>{guide.title}</Text>
-            <Text style={s.headerCat}>{cat.name}</Text>
+            <Text style={s.headerTitle}>
+              {guide.title}
+            </Text>
+
+            <Text style={s.headerCat}>
+              {cat.name}
+            </Text>
           </View>
+
         </View>
+
       </View>
 
       <ScrollView
         style={s.scroll}
-        contentContainerStyle={s.scrollContent}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          s.scrollContent
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
       >
-        {/* Severity + emergency */}
+
+        {/* BADGES */}
         <View style={s.badgeRow}>
-          <View style={[s.sevBadge, { backgroundColor: sev.bg }]}>
-            <View style={[s.sevDot, { backgroundColor: sev.dot }]} />
-            <Text style={[s.sevText, { color: sev.color }]}>{sev.label}</Text>
+
+          <View
+            style={[
+              s.sevBadge,
+              {
+                backgroundColor:
+                  sev.bg,
+              },
+            ]}
+          >
+            <View
+              style={[
+                s.sevDot,
+                {
+                  backgroundColor:
+                    sev.dot,
+                },
+              ]}
+            />
+
+            <Text
+              style={[
+                s.sevText,
+                {
+                  color:
+                    sev.color,
+                },
+              ]}
+            >
+              {sev.label}
+            </Text>
           </View>
+
           {guide.callEmergency && (
             <View style={s.emergBadge}>
-              <Text style={s.emergBadgeText}>🚨 Call 911 immediately</Text>
+              <Text
+                style={
+                  s.emergBadgeText
+                }
+              >
+                🚨 Call 911
+              </Text>
             </View>
           )}
+
         </View>
 
-        {/* Overview */}
+        {/* OVERVIEW */}
         <View style={s.overviewCard}>
-          <Text style={s.overviewLabel}>Overview</Text>
-          <Text style={s.overviewText}>{content.overview}</Text>
+
+          <Text style={s.overviewLabel}>
+            Overview
+          </Text>
+
+          <Text style={s.overviewText}>
+            {content.overview}
+          </Text>
+
         </View>
 
-        {/* TTS button */}
+        {/* TTS BUTTON */}
         <TouchableOpacity
-          style={[s.ttsBtn, { backgroundColor: cat.accent }]}
-          onPress={speaking ? stopSpeaking : speakAll}
+          style={[
+            s.ttsBtn,
+            {
+              backgroundColor:
+                cat.accent,
+            },
+          ]}
+          onPress={
+            speaking
+              ? stopSpeaking
+              : speakAll
+          }
         >
           <Text style={s.ttsBtnText}>
-            {speaking ? '⏹  Stop reading' : '🔊  Read all steps aloud'}
+            {speaking
+              ? '⏹ Stop reading'
+              : '🔊 Read all steps aloud'}
           </Text>
         </TouchableOpacity>
 
-        {/* Steps */}
-        <Text style={s.stepsLabel}>Steps</Text>
-        {content.steps.map((step, i) => (
-          <TouchableOpacity
-            key={i}
-            style={[
-              s.stepCard,
-              activeStep === i && { borderColor: cat.accent, borderWidth: 1.5 }
-            ]}
-            onPress={() => activeStep === i ? stopSpeaking() : speakStep(step, i)}
-            activeOpacity={0.85}
-          >
-            <View style={[s.stepNum, { backgroundColor: cat.bg }]}>
-              <Text style={[s.stepNumText, { color: cat.accent }]}>{i + 1}</Text>
-            </View>
-            <Text style={s.stepText}>{step}</Text>
-            <Text style={s.stepPlay}>{activeStep === i ? '🔊' : '▶'}</Text>
-          </TouchableOpacity>
-        ))}
+        {/* STEPS */}
+        <Text style={s.stepsLabel}>
+          Steps
+        </Text>
 
-        {/* Emergency box */}
+        {content.steps.map(
+          (step, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[
+                s.stepCard,
+
+                activeStep === i && {
+                  borderColor:
+                    cat.accent,
+
+                  borderWidth: 1.5,
+                },
+              ]}
+              onPress={() =>
+                activeStep === i
+                  ? stopSpeaking()
+                  : speakStep(
+                      step,
+                      i
+                    )
+              }
+              activeOpacity={0.9}
+            >
+
+              <View
+                style={[
+                  s.stepNum,
+                  {
+                    backgroundColor:
+                      cat.bg,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    s.stepNumText,
+                    {
+                      color:
+                        cat.accent,
+                    },
+                  ]}
+                >
+                  {i + 1}
+                </Text>
+              </View>
+
+              <Text style={s.stepText}>
+                {step}
+              </Text>
+
+              <Text style={s.stepPlay}>
+                {activeStep === i
+                  ? '🔊'
+                  : '▶'}
+              </Text>
+
+            </TouchableOpacity>
+          )
+        )}
+
+        {/* EMERGENCY */}
         {guide.callEmergency && (
           <View style={s.emergBox}>
-            <Text style={s.emergBoxTitle}>⚠️ Medical emergency</Text>
-            <Text style={s.emergBoxText}>
-              These steps are first aid only. Call 911 or your local emergency
-              number immediately and do not delay professional care.
+
+            <Text style={s.emergBoxTitle}>
+              ⚠️ Medical emergency
             </Text>
+
+            <Text style={s.emergBoxText}>
+              These steps are
+              first aid only.
+              Contact emergency
+              responders immediately
+              and do not delay
+              professional care.
+            </Text>
+
           </View>
         )}
 
@@ -157,52 +401,310 @@ export default function GuideDetailScreen({ route, navigation }) {
 }
 
 const s = StyleSheet.create({
-  safe:           { flex: 1, backgroundColor: '#B91C1C' },
-  header:         { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 },
-  headerTop:      { flexDirection: 'row', justifyContent: 'space-between',
-                    alignItems: 'center', marginBottom: 16 },
-  backBtn:        {},
-  backText:       { fontSize: 16, color: '#fff', fontWeight: '500' },
-  langBtn:        { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
-                    backgroundColor: 'rgba(255,255,255,0.2)' },
-  langBtnText:    { fontSize: 12, color: '#fff', fontWeight: '600' },
-  headerBody:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headerIcon:     { width: 48, height: 48, borderRadius: 12,
-                    alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  headerEmoji:    { fontSize: 26 },
-  headerTitle:    { fontSize: 17, fontWeight: '700', color: '#fff', lineHeight: 22 },
-  headerCat:      { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  scroll:         { flex: 1, backgroundColor: '#F5F5F5',
-                    borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  scrollContent:  { padding: 16, paddingBottom: 60 },
-  badgeRow:       { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  sevBadge:       { flexDirection: 'row', alignItems: 'center', gap: 6,
-                    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  sevDot:         { width: 7, height: 7, borderRadius: 4 },
-  sevText:        { fontSize: 12, fontWeight: '600' },
-  emergBadge:     { backgroundColor: '#FEE2E2', paddingHorizontal: 12,
-                    paddingVertical: 6, borderRadius: 20 },
-  emergBadgeText: { fontSize: 12, color: '#991B1B', fontWeight: '600' },
-  overviewCard:   { backgroundColor: '#fff', borderRadius: 14, padding: 14,
-                    marginBottom: 14, borderWidth: 0.5, borderColor: '#F0F0F0' },
-  overviewLabel:  { fontSize: 11, fontWeight: '600', color: '#888',
-                    textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
-  overviewText:   { fontSize: 13, color: '#444', lineHeight: 22 },
-  ttsBtn:         { borderRadius: 12, paddingVertical: 13,
-                    alignItems: 'center', marginBottom: 16 },
-  ttsBtnText:     { color: '#fff', fontSize: 14, fontWeight: '600' },
-  stepsLabel:     { fontSize: 11, fontWeight: '600', color: '#888',
-                    textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
-  stepCard:       { flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-                    backgroundColor: '#fff', borderRadius: 12, padding: 13,
-                    marginBottom: 8, borderWidth: 0.5, borderColor: '#F0F0F0' },
-  stepNum:        { width: 30, height: 30, borderRadius: 8,
-                    alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  stepNumText:    { fontSize: 14, fontWeight: '700' },
-  stepText:       { flex: 1, fontSize: 13, color: '#333', lineHeight: 22 },
-  stepPlay:       { fontSize: 15, color: '#CCC', flexShrink: 0, marginTop: 3 },
-  emergBox:       { backgroundColor: '#FEF2F2', borderRadius: 12, padding: 14,
-                    marginTop: 8, borderWidth: 1, borderColor: '#FECACA' },
-  emergBoxTitle:  { fontSize: 14, fontWeight: '700', color: '#991B1B', marginBottom: 6 },
-  emergBoxText:   { fontSize: 13, color: '#7F1D1D', lineHeight: 20 },
+
+  safe: {
+    flex: 1,
+    backgroundColor: '#F7FAF9',
+  },
+
+  header: {
+    paddingHorizontal: 22,
+    paddingTop: 10,
+    paddingBottom: 22,
+
+    backgroundColor: '#F7FAF9',
+  },
+
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent:
+      'space-between',
+
+    alignItems: 'center',
+
+    marginBottom: 22,
+  },
+
+  backBtn: {
+    backgroundColor: '#FFFFFF',
+
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+
+    borderRadius: 18,
+
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+
+  backText: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '700',
+  },
+
+  langBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+
+    borderRadius: 18,
+
+    backgroundColor: '#FFFFFF',
+
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+
+  langBtnText: {
+    fontSize: 12,
+    color: '#111827',
+    fontWeight: '700',
+  },
+
+  headerBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+
+  headerIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    flexShrink: 0,
+  },
+
+  headerEmoji: {
+    fontSize: 30,
+  },
+
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#111827',
+
+    lineHeight: 28,
+  },
+
+  headerCat: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+
+  scroll: {
+    flex: 1,
+    backgroundColor: '#F7FAF9',
+  },
+
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingBottom: 120,
+  },
+
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+
+    marginBottom: 18,
+  },
+
+  sevBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+
+    borderRadius: 20,
+  },
+
+  sevDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+
+  sevText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  emergBadge: {
+    backgroundColor: '#FEE2E2',
+
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+
+    borderRadius: 20,
+  },
+
+  emergBadgeText: {
+    fontSize: 12,
+    color: '#991B1B',
+    fontWeight: '700',
+  },
+
+  overviewCard: {
+    backgroundColor: '#FFFFFF',
+
+    borderRadius: 24,
+
+    padding: 18,
+
+    marginBottom: 18,
+
+    borderWidth: 1,
+    borderColor: '#EEF2F7',
+
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    elevation: 2,
+  },
+
+  overviewLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+
+    color: '#6B7280',
+
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+
+    marginBottom: 8,
+  },
+
+  overviewText: {
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 24,
+  },
+
+  ttsBtn: {
+    borderRadius: 18,
+
+    paddingVertical: 15,
+
+    alignItems: 'center',
+
+    marginBottom: 22,
+  },
+
+  ttsBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  stepsLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+
+    color: '#6B7280',
+
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+
+    marginBottom: 12,
+  },
+
+  stepCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 14,
+
+    backgroundColor: '#FFFFFF',
+
+    borderRadius: 22,
+
+    padding: 16,
+
+    marginBottom: 10,
+
+    borderWidth: 1,
+    borderColor: '#EEF2F7',
+
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    elevation: 2,
+  },
+
+  stepNum: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    flexShrink: 0,
+  },
+
+  stepNumText: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
+  stepText: {
+    flex: 1,
+
+    fontSize: 14,
+    color: '#374151',
+
+    lineHeight: 24,
+  },
+
+  stepPlay: {
+    fontSize: 16,
+    color: '#9CA3AF',
+
+    marginTop: 3,
+  },
+
+  emergBox: {
+    backgroundColor: '#FEF2F2',
+
+    borderRadius: 22,
+
+    padding: 18,
+
+    marginTop: 12,
+
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+
+  emergBoxTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+
+    color: '#991B1B',
+
+    marginBottom: 8,
+  },
+
+  emergBoxText: {
+    fontSize: 14,
+    color: '#7F1D1D',
+
+    lineHeight: 22,
+  },
 });
