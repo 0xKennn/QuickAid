@@ -321,20 +321,6 @@ Detected classes include:
 
 ---
 
-# Future Improvements
-
-- Offline image classification
-- Multi-language support
-- Emergency hospital locator
-- GPS integration
-- Voice assistant
-- Medical professional consultation
-- Expanded injury dataset
-- Improved classification accuracy
-
----
-
-
 # License
 
 This project is intended for educational and research purposes.
