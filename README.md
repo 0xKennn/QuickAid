@@ -334,19 +334,6 @@ Detected classes include:
 
 ---
 
-# Contributors
-
-QuickAid was developed as part of an academic capstone project.
-
-Contributors:
-
-- Project Developers
-- Faculty Adviser
-- Research Team
-
-(Add team member names here.)
-
----
 
 # License
 
