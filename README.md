@@ -2,7 +2,7 @@
 
 QuickAid is a mobile first-aid assistance application developed using **React Native (Expo)**. It combines **artificial intelligence**, **image classification**, and **interactive first-aid guidance** to help users quickly identify common injuries and receive appropriate emergency care instructions.
 
-The application is designed to provide immediate assistance during emergency situations by recognizing wounds through the device camera, recommending first-aid procedures, and allowing users to interact with an AI-powered chatbot for additional guidance.
+The application is designed to provide immediate assistance during emergency situations by recognizing injuries through the device camera, recommending first-aid procedures, and allowing users to interact with an AI-powered chatbot for additional guidance.
 
 ---
 
@@ -68,7 +68,7 @@ Firebase Firestore stores:
 
 ---
 
-## 📷 Camera Integration
+## Camera Integration
 
 Uses Expo Camera for:
 
@@ -78,7 +78,7 @@ Uses Expo Camera for:
 
 ---
 
-## 🧠 Machine Learning
+## Machine Learning
 
 The application uses a custom-trained image classification model built using TensorFlow.
 
