@@ -12,6 +12,8 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  Keyboard,
+  Platform,
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +22,50 @@ import { updateUserProfile, logoutUser } from '../../services/auth';
 
 const LANG_KEY = 'appLanguage';
 const NOTIF_KEY = 'quickaid_notifications_enabled';
+
+// ─── VALIDATION HELPERS ───────────────────────────────────
+
+function sanitizeName(text) {
+  return text.replace(/[^a-zA-Z\s]/g, '');
+}
+
+function validateName(value) {
+  if (!value.trim()) return 'Name cannot be empty';
+  if (value.trim().length < 2) return 'Name is too short';
+  return '';
+}
+
+function formatPhone(text) {
+  let digits = text.replace(/\D/g, '');
+
+  if (digits.startsWith('63')) {
+    digits = '0' + digits.slice(2);
+  }
+
+  digits = digits.slice(0, 11);
+
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 7) {
+    return digits.slice(0, 4) + ' ' + digits.slice(4);
+  }
+  return (
+    digits.slice(0, 4) +
+    ' ' +
+    digits.slice(4, 7) +
+    ' ' +
+    digits.slice(7)
+  );
+}
+
+function validatePhone(formatted) {
+  const digits = formatted.replace(/\D/g, '');
+  if (!digits) return 'Phone number is required';
+  if (digits.length < 11) return 'Phone number is incomplete';
+  if (!digits.startsWith('09')) return 'Phone number must start with 09';
+  if (digits.length !== 11) return 'Phone number must be 11 digits';
+  return '';
+}
+// ─────────────────────────────────────────────────────────
 
 export default function ProfileScreen() {
   const { user, profile, refreshProfile } = useAuth();
@@ -34,10 +80,34 @@ export default function ProfileScreen() {
     phone: '',
   });
 
+  const [nameError, setNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
   const formRef = React.useRef({
     name: '',
     phone: '',
   });
+
+  // ─── Keyboard height listener ───────────────────────────
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) =>
+      setKeyboardHeight(e.endCoordinates.height)
+    );
+    const hideSub = Keyboard.addListener(hideEvent, () =>
+      setKeyboardHeight(0)
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+  // ───────────────────────────────────────────────────────
 
   useEffect(() => {
     loadPreferences();
@@ -63,36 +133,84 @@ export default function ProfileScreen() {
   }
 
   function openEdit() {
+    // Pre-fill with current profile data
+    // Format phone so it displays as 09XX XXX XXXX
     const initial = {
       name: profile?.name || '',
-      phone: profile?.phone || '',
+      phone: formatPhone(profile?.phone || ''),
     };
 
     formRef.current = { ...initial };
     setForm(initial);
+    setNameError('');
+    setPhoneError('');
     setEditModal(true);
+  }
+
+  function handleNameChange(text) {
+    const sanitized = sanitizeName(text);
+    formRef.current.name = sanitized;
+    setForm(f => ({ ...f, name: sanitized }));
+
+    if (nameError) {
+      setNameError(validateName(sanitized));
+    }
+  }
+
+  function handlePhoneChange(text) {
+    const formatted = formatPhone(text);
+    formRef.current.phone = formatted;
+    setForm(f => ({ ...f, phone: formatted }));
+
+    const digits = formatted.replace(/\D/g, '');
+
+    if (digits.length >= 11) {
+      setPhoneError(validatePhone(formatted));
+    } else if (digits.length >= 2 && !digits.startsWith('09')) {
+      setPhoneError('Phone number must start with 09');
+    } else {
+      setPhoneError('');
+    }
   }
 
   async function handleSave() {
     const data = formRef.current;
+    const nameErr = validateName(data.name);
+    const phoneErr = validatePhone(data.phone);
 
-    if (!data.name.trim()) {
-      Alert.alert('Missing field', 'Name cannot be empty.');
+    if (nameErr) setNameError(nameErr);
+    if (phoneErr) setPhoneError(phoneErr);
+
+    if (nameErr || phoneErr) {
+      Alert.alert('Invalid Input', nameErr || phoneErr);
       return;
     }
 
     setSaving(true);
 
     try {
-      await updateUserProfile(user.uid, {
-        name: data.name.trim(),
-        phone: data.phone.trim(),
-      });
+      // Only send fields that actually changed
+      const updates = {};
+      const cleanName = data.name.trim();
+      const cleanPhone = data.phone.replace(/\D/g, '');
 
+      if (cleanName !== (profile?.name || '').trim()) {
+        updates.name = cleanName;
+      }
+      if (cleanPhone !== (profile?.phone || '').replace(/\D/g, '')) {
+        updates.phone = cleanPhone;
+      }
+
+      // If nothing changed, just close the modal
+      if (Object.keys(updates).length === 0) {
+        setEditModal(false);
+        return;
+      }
+
+      await updateUserProfile(user.uid, updates);
       await refreshProfile();
 
       setEditModal(false);
-
       Alert.alert('Saved', 'Profile updated successfully.');
     } catch (err) {
       Alert.alert('Error', err.message);
@@ -130,16 +248,12 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#03110D"
-      />
+      <StatusBar barStyle="light-content" backgroundColor="#03110D" />
 
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
       >
-
         {/* HEADER */}
         <View style={s.header}>
           <Text style={s.headerTitle}>Profile</Text>
@@ -150,7 +264,6 @@ export default function ProfileScreen() {
 
         {/* PROFILE CARD */}
         <View style={s.profileCard}>
-
           <View style={s.avatar}>
             <Text style={s.avatarText}>{initials}</Text>
           </View>
@@ -170,59 +283,31 @@ export default function ProfileScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={s.editButton}
-            onPress={openEdit}
-          >
-            <Text style={s.editButtonText}>
-              Edit Profile
-            </Text>
+          <TouchableOpacity style={s.editButton} onPress={openEdit}>
+            <Text style={s.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
 
         {/* PERSONAL INFO */}
-        <Text style={s.sectionTitle}>
-          PERSONAL INFORMATION
-        </Text>
+        <Text style={s.sectionTitle}>PERSONAL INFORMATION</Text>
 
         <View style={s.card}>
-          <InfoRow
-            label="Full Name"
-            value={profile?.name}
-          />
-
-          <InfoRow
-            label="Email"
-            value={user?.email}
-          />
-
-          <InfoRow
-            label="Phone"
-            value={profile?.phone}
-          />
+          <InfoRow label="Full Name" value={profile?.name} />
+          <InfoRow label="Email" value={user?.email} />
+          <InfoRow label="Phone" value={formatPhone(profile?.phone || '')} />
         </View>
 
         {/* SETTINGS */}
-        <Text style={s.sectionTitle}>
-          SETTINGS
-        </Text>
+        <Text style={s.sectionTitle}>SETTINGS</Text>
 
         <View style={s.card}>
-
           <SettingRow
             title="Language"
-            subtitle={lang === 'en'
-              ? 'English'
-              : 'Filipino'}
+            subtitle={lang === 'en' ? 'English' : 'Filipino'}
           >
-            <TouchableOpacity
-              style={s.pillButton}
-              onPress={toggleLang}
-            >
+            <TouchableOpacity style={s.pillButton} onPress={toggleLang}>
               <Text style={s.pillText}>
-                {lang === 'en'
-                  ? 'EN'
-                  : 'FIL'}
+                {lang === 'en' ? 'EN' : 'FIL'}
               </Text>
             </TouchableOpacity>
           </SettingRow>
@@ -231,63 +316,35 @@ export default function ProfileScreen() {
 
           <SettingRow
             title="Push Notifications"
-            subtitle={notifEnabled
-              ? 'Enabled'
-              : 'Disabled'}
+            subtitle={notifEnabled ? 'Enabled' : 'Disabled'}
           >
             <Switch
               value={notifEnabled}
               onValueChange={toggleNotif}
-              trackColor={{
-                false: '#1A2A26',
-                true: '#34D399',
-              }}
-              thumbColor={
-                notifEnabled
-                  ? '#ECFDF5'
-                  : '#FFFFFF'
-              }
+              trackColor={{ false: '#1A2A26', true: '#34D399' }}
+              thumbColor={notifEnabled ? '#ECFDF5' : '#FFFFFF'}
             />
           </SettingRow>
         </View>
 
         {/* ABOUT */}
-        <Text style={s.sectionTitle}>
-          SYSTEM
-        </Text>
+        <Text style={s.sectionTitle}>SYSTEM</Text>
 
         <View style={s.card}>
-          <InfoRow
-            label="Version"
-            value="QuickAid v1.0"
-          />
-
-          <InfoRow
-            label="Build"
-            value="Healthcare Beta"
-          />
-
-          <InfoRow
-            label="Status"
-            value="Operational"
-          />
+          <InfoRow label="Version" value="QuickAid v1.0" />
+          <InfoRow label="Build" value="Healthcare Beta" />
+          <InfoRow label="Status" value="Operational" />
         </View>
 
         {/* LOGOUT */}
-        <TouchableOpacity
-          style={s.logoutBtn}
-          onPress={handleLogout}
-        >
-          <Text style={s.logoutText}>
-            Log Out
-          </Text>
+        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+          <Text style={s.logoutText}>Log Out</Text>
         </TouchableOpacity>
 
         <Text style={s.footer}>
           QuickAid Capstone 2026{'\n'}
           AI-powered emergency assistance
         </Text>
-
       </ScrollView>
 
       {/* EDIT MODAL */}
@@ -295,73 +352,86 @@ export default function ProfileScreen() {
         visible={editModal}
         animationType="slide"
         transparent
+        statusBarTranslucent
       >
-        <View style={s.modalOverlay}>
-          <View style={s.modalContainer}>
+        <View style={[s.modalOverlay, { paddingBottom: keyboardHeight }]}>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={s.modalScrollContent}
+          >
+            <View style={s.modalContainer}>
+              <Text style={s.modalTitle}>Edit Profile</Text>
 
-            <Text style={s.modalTitle}>
-              Edit Profile
-            </Text>
+              {/* NAME */}
+              <Text style={s.inputLabel}>Full Name</Text>
 
-            <Text style={s.inputLabel}>
-              Full Name
-            </Text>
+              <TextInput
+                style={[
+                  s.input,
+                  nameError
+                    ? { borderColor: '#E74C3C', backgroundColor: '#FDF2F2' }
+                    : null,
+                ]}
+                placeholder="Your full name"
+                placeholderTextColor="#6B7280"
+                value={form.name}
+                onChangeText={handleNameChange}
+                autoCapitalize="words"
+              />
 
-            <TextInput
-              style={s.input}
-              placeholder="Your full name"
-              placeholderTextColor="#6B7280"
-              value={form.name}
-              onChangeText={t => {
-                formRef.current.name = t;
-                setForm(f => ({ ...f, name: t }));
-              }}
-            />
+              {nameError ? (
+                <Text style={s.errorText}>{nameError}</Text>
+              ) : (
+                <Text style={s.hintText}>Letters and spaces only</Text>
+              )}
 
-            <Text style={s.inputLabel}>
-              Phone Number
-            </Text>
+              {/* PHONE */}
+              <Text style={s.inputLabel}>Phone Number</Text>
 
-            <TextInput
-              style={s.input}
-              placeholder="+63 912 345 6789"
-              placeholderTextColor="#6B7280"
-              keyboardType="phone-pad"
-              value={form.phone}
-              onChangeText={t => {
-                formRef.current.phone = t;
-                setForm(f => ({ ...f, phone: t }));
-              }}
-            />
+              <TextInput
+                style={[
+                  s.input,
+                  phoneError
+                    ? { borderColor: '#E74C3C', backgroundColor: '#FDF2F2' }
+                    : null,
+                ]}
+                placeholder="09XX XXX XXXX"
+                placeholderTextColor="#6B7280"
+                keyboardType="phone-pad"
+                maxLength={13}
+                value={form.phone}
+                onChangeText={handlePhoneChange}
+              />
 
-            <View style={s.modalButtons}>
+              {phoneError ? (
+                <Text style={s.errorText}>{phoneError}</Text>
+              ) : (
+                <Text style={s.hintText}>Format: 09XX XXX XXXX (11 digits)</Text>
+              )}
 
-              <TouchableOpacity
-                style={s.cancelBtn}
-                onPress={() => setEditModal(false)}
-              >
-                <Text style={s.cancelText}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
+              <View style={s.modalButtons}>
+                <TouchableOpacity
+                  style={s.cancelBtn}
+                  onPress={() => setEditModal(false)}
+                >
+                  <Text style={s.cancelText}>Cancel</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={s.saveBtn}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                {saving ? (
-                  <ActivityIndicator color="#03110D" />
-                ) : (
-                  <Text style={s.saveText}>
-                    Save
-                  </Text>
-                )}
-              </TouchableOpacity>
-
+                <TouchableOpacity
+                  style={s.saveBtn}
+                  onPress={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <ActivityIndicator color="#03110D" />
+                  ) : (
+                    <Text style={s.saveText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
-
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </SafeAreaView>
@@ -372,37 +442,24 @@ function InfoRow({ label, value }) {
   return (
     <View style={s.row}>
       <Text style={s.rowLabel}>{label}</Text>
-      <Text style={s.rowValue}>
-        {value || '—'}
-      </Text>
+      <Text style={s.rowValue}>{value || '—'}</Text>
     </View>
   );
 }
 
-function SettingRow({
-  title,
-  subtitle,
-  children,
-}) {
+function SettingRow({ title, subtitle, children }) {
   return (
     <View style={s.settingRow}>
       <View style={{ flex: 1 }}>
-        <Text style={s.settingTitle}>
-          {title}
-        </Text>
-
-        <Text style={s.settingSubtitle}>
-          {subtitle}
-        </Text>
+        <Text style={s.settingTitle}>{title}</Text>
+        <Text style={s.settingSubtitle}>{subtitle}</Text>
       </View>
-
       {children}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-
   safe: {
     flex: 1,
     backgroundColor: '#F4F6F5',
@@ -647,6 +704,11 @@ const s = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+  },
+
   modalContainer: {
     backgroundColor: '#FFFFFF',
 
@@ -685,6 +747,18 @@ const s = StyleSheet.create({
 
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+
+  errorText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#E74C3C',
+  },
+
+  hintText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#9CA3AF',
   },
 
   modalButtons: {

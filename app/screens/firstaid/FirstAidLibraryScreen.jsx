@@ -9,365 +9,215 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-
+import { Search } from 'lucide-react-native';
 import { CATEGORIES } from '../../data/categories';
 import { GUIDES } from '../../data/guides';
 
-export default function FirstAidLibraryScreen({
-  navigation,
-}) {
-  const [search, setSearch] = useState('');
-  const [selectedCat, setSelectedCat] =
-    useState(null);
+export default function FirstAidLibraryScreen({ navigation }) {
+  const [search, setSearch]         = useState('');
+  const [selectedCat, setSelectedCat] = useState(null);
 
   const filtered = GUIDES.filter(g => {
     const matchesCat = selectedCat
       ? g.categoryId === selectedCat
       : true;
-
-    const matchesSearch =
-      search.trim() === ''
-        ? true
-        : g.title
-            .toLowerCase()
-            .includes(search.toLowerCase()) ||
-          g.content.en.overview
-            .toLowerCase()
-            .includes(search.toLowerCase());
-
+    const matchesSearch = search.trim() === ''
+      ? true
+      : g.title.toLowerCase().includes(search.toLowerCase()) ||
+        g.content.en.overview.toLowerCase().includes(search.toLowerCase());
     return matchesCat && matchesSearch;
   });
 
-  const getCat = id =>
-    CATEGORIES.find(c => c.id === id);
-
-  const activeCatName = selectedCat
-    ? getCat(selectedCat)?.name
-    : null;
+  const getCat = id => CATEGORIES.find(c => c.id === id);
 
   const sevStyle = {
-    mild: {
-      bg: '#DCFCE7',
-      color: '#166534',
-    },
-
-    moderate: {
-      bg: '#FEF3C7',
-      color: '#92400E',
-    },
-
-    severe: {
-      bg: '#FEE2E2',
-      color: '#991B1B',
-    },
+    mild:     { bg: '#DCFCE7', color: '#166534' },
+    moderate: { bg: '#FEF9C3', color: '#854D0E' },
+    severe:   { bg: '#FEE2E2', color: '#991B1B' },
   };
 
   function GuideCard({ item }) {
     const cat = getCat(item.categoryId);
-
     const sev = sevStyle[item.severity];
-
     return (
       <TouchableOpacity
-        style={[
-          s.card,
-          {
-            borderLeftColor: cat.accent,
-          },
-        ]}
+        style={[s.card, { borderLeftColor: cat.accent }]}
         onPress={() =>
-          navigation.navigate(
-            'GuideDetail',
-            { guide: item }
-          )
+          navigation.navigate('GuideDetail', { guide: item })
         }
-        activeOpacity={0.9}
+        activeOpacity={0.85}
       >
-        <View
-          style={[
-            s.cardIcon,
-            {
-              backgroundColor: cat.bg,
-            },
-          ]}
-        >
-          <Text style={s.cardEmoji}>
-            {cat.emoji}
-          </Text>
+        <View style={[s.cardIcon, { backgroundColor: cat.bg }]}>
+          <Text style={s.cardEmoji}>{cat.emoji}</Text>
         </View>
-
         <View style={s.cardBody}>
-          <Text style={s.cardTitle}>
-            {item.title}
-          </Text>
-
-          <Text style={s.cardCat}>
-            {cat.name}
-          </Text>
-
+          <Text style={s.cardTitle}>{item.title}</Text>
+          <Text style={s.cardCat}>{cat.name}</Text>
           <View style={s.cardBadges}>
-
-            <View
-              style={[
-                s.badge,
-                {
-                  backgroundColor: sev.bg,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  s.badgeText,
-                  {
-                    color: sev.color,
-                  },
-                ]}
-              >
-                {item.severity
-                  .charAt(0)
-                  .toUpperCase() +
+            <View style={[s.badge, { backgroundColor: sev.bg }]}>
+              <Text style={[s.badgeText, { color: sev.color }]}>
+                {item.severity.charAt(0).toUpperCase() +
                   item.severity.slice(1)}
               </Text>
             </View>
-
             {item.callEmergency && (
               <View style={s.badge911}>
-                <Text style={s.badge911Text}>
-                  🚨 Emergency
-                </Text>
+                <Text style={s.badge911Text}>🚨 Emergency</Text>
               </View>
             )}
-
           </View>
         </View>
-
         <Text style={s.chev}>›</Text>
       </TouchableOpacity>
     );
   }
 
+  const ALL_CATS = [
+    { id: null, name: 'All', emoji: '📋' },
+    ...CATEGORIES,
+  ];
+
+  const activeCatName = selectedCat
+    ? getCat(selectedCat)?.name?.toUpperCase()
+    : 'ALL';
+
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#F7FAF9"
-      />
+      <StatusBar barStyle="dark-content" backgroundColor="#F5F7F6" />
 
       {/* HEADER */}
       <View style={s.header}>
-
-        <Text style={s.headerTitle}>
-          First Aid Library
-        </Text>
-
+        <Text style={s.headerTitle}>First Aid Library</Text>
         <Text style={s.headerSub}>
-          {CATEGORIES.length} categories ·{' '}
-          {GUIDES.length} guides
+          {CATEGORIES.length} categories · {GUIDES.length} guides
         </Text>
-
       </View>
 
-      <View style={s.body}>
+      {/* SEARCH */}
+      <View style={s.searchWrap}>
+        <Search size={18} color="#9CA3AF" />
+        <TextInput
+          style={s.searchInput}
+          placeholder="Search injuries, guides..."
+          placeholderTextColor="#BBB"
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Text style={s.clearBtn}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
-        {/* SEARCH */}
-        <View style={s.searchWrap}>
-
-          <Text style={s.searchIcon}>
-            🔍
-          </Text>
-
-          <TextInput
-            style={s.searchInput}
-            placeholder="Search injuries, guides..."
-            placeholderTextColor="#9CA3AF"
-            value={search}
-            onChangeText={setSearch}
-            clearButtonMode="while-editing"
-          />
-
-          {search.length > 0 && (
+      {/* CATEGORY PILLS */}
+      <FlatList
+        horizontal
+        data={ALL_CATS}
+        keyExtractor={c => c.id ?? 'all'}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.catList}
+        style={{ flexGrow: 0, flexShrink: 0, marginBottom: 14 }}
+        renderItem={({ item }) => {
+          const active = selectedCat === item.id;
+          return (
             <TouchableOpacity
-              onPress={() => setSearch('')}
+              style={[
+                s.catPill,
+                active && s.catPillActive,
+              ]}
+              onPress={() => setSelectedCat(item.id)}
+              activeOpacity={0.8}
             >
-              <Text style={s.clearBtn}>
-                ✕
+              <Text style={s.catEmoji}>{item.emoji}</Text>
+              <Text
+                style={[
+                  s.catPillText,
+                  active && { color: '#fff' },
+                ]}
+              >
+                {item.id === null
+                  ? 'All'
+                  : item.name.split(' ')[0]}
               </Text>
             </TouchableOpacity>
-          )}
+          );
+        }}
+      />
 
-        </View>
+      {/* SECTION LABEL */}
+      <Text style={s.sectionLabel}>
+        {`${activeCatName} GUIDES (${filtered.length})`}
+      </Text>
 
-        {/* CATEGORY PILLS */}
-        <FlatList
-          horizontal
-          data={[
-            {
-              id: null,
-              name: 'All',
-              emoji: '📋',
-            },
-            ...CATEGORIES,
-          ]}
-          keyExtractor={c =>
-            c.id ?? 'all'
-          }
-          showsHorizontalScrollIndicator={
-            false
-          }
-          contentContainerStyle={s.catList}
-          style={{
-            flexGrow: 0,
-            marginBottom: 16,
-          }}
-          renderItem={({ item }) => {
-            const active =
-              selectedCat === item.id;
-
-            return (
-              <TouchableOpacity
-                style={[
-                  s.catPill,
-                  active &&
-                    s.catPillActive,
-                ]}
-                onPress={() =>
-                  setSelectedCat(item.id)
-                }
-              >
-                <Text style={s.catEmoji}>
-                  {item.emoji}
-                </Text>
-
-                <Text
-                  style={[
-                    s.catPillText,
-                    active &&
-                      s.catPillTextActive,
-                  ]}
-                >
-                  {item.id === null
-                    ? 'All'
-                    : item.name.split(
-                        ' '
-                      )[0]}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
-
-        {/* SECTION */}
-        <Text style={s.sectionLabel}>
-          {activeCatName
-            ? `${activeCatName} guides`
-            : 'All guides'}{' '}
-          ({filtered.length})
-        </Text>
-
-        {/* LIST */}
-        <FlatList
-          data={filtered}
-          keyExtractor={g => g.id}
-          contentContainerStyle={s.list}
-          showsVerticalScrollIndicator={
-            false
-          }
-          ListEmptyComponent={
-            <View style={s.empty}>
-
-              <Text style={s.emptyEmoji}>
-                🔍
-              </Text>
-
-              <Text style={s.emptyTitle}>
-                No guides found
-              </Text>
-
-              <Text style={s.emptyText}>
-                Try another keyword or
-                category.
-              </Text>
-
-            </View>
-          }
-          renderItem={({ item }) => (
-            <GuideCard item={item} />
-          )}
-        />
-
-      </View>
+      {/* GUIDE LIST */}
+      <FlatList
+        data={filtered}
+        keyExtractor={g => g.id}
+        contentContainerStyle={s.list}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={s.empty}>
+            <Text style={s.emptyEmoji}>🔍</Text>
+            <Text style={s.emptyTitle}>No guides found</Text>
+            <Text style={s.emptyText}>
+              Try a different search or category.
+            </Text>
+          </View>
+        }
+        renderItem={({ item }) => <GuideCard item={item} />}
+      />
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-
   safe: {
     flex: 1,
-    backgroundColor: '#F7FAF9',
+    backgroundColor: '#F5F7F6',
   },
 
   header: {
-    paddingHorizontal: 22,
-    paddingTop: 16,
-    paddingBottom: 18,
-    backgroundColor: '#F7FAF9',
+    paddingHorizontal: 20,
+    paddingTop: 28,
+    paddingBottom: 12,
   },
 
   headerTitle: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: '800',
     color: '#111827',
-    letterSpacing: -0.6,
+    letterSpacing: -0.5,
   },
 
   headerSub: {
     fontSize: 13,
-    color: '#6B7280',
+    color: '#9CA3AF',
     marginTop: 4,
-  },
-
-  body: {
-    flex: 1,
-    paddingTop: 6,
+    fontWeight: '500',
   },
 
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-
-    backgroundColor: '#FFFFFF',
-
-    marginHorizontal: 18,
-    marginBottom: 14,
-
-    borderRadius: 18,
-
+    backgroundColor: '#fff',
+    borderRadius: 16,
     paddingHorizontal: 14,
-
+    marginHorizontal: 20,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-
+    gap: 10,
     shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-
-    elevation: 2,
-  },
-
-  searchIcon: {
-    fontSize: 16,
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
 
   searchInput: {
     flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-
+    paddingVertical: 13,
     fontSize: 14,
     color: '#111827',
   },
@@ -379,29 +229,32 @@ const s = StyleSheet.create({
   },
 
   catList: {
-    paddingHorizontal: 18,
-    gap: 10,
+    paddingHorizontal: 20,
+    gap: 8,
+    paddingBottom: 4,
   },
 
   catPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-
-    backgroundColor: '#FFFFFF',
-
+    gap: 5,
     paddingHorizontal: 14,
-    paddingVertical: 10,
-
+    paddingVertical: 9,
     borderRadius: 20,
-
+    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    flexShrink: 0,
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
 
   catPillActive: {
-    backgroundColor: '#63D3AE',
-    borderColor: '#63D3AE',
+    backgroundColor: '#5DBB9A',
+    borderColor: '#5DBB9A',
   },
 
   catEmoji: {
@@ -411,28 +264,21 @@ const s = StyleSheet.create({
   catPillText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4B5563',
-  },
-
-  catPillTextActive: {
-    color: '#FFFFFF',
+    color: '#555',
+    flexShrink: 0,
   },
 
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-
-    color: '#6B7280',
-
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-
+    color: '#9CA3AF',
+    letterSpacing: 0.8,
     marginHorizontal: 20,
-    marginBottom: 10,
+    marginBottom: 12,
   },
 
   list: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     paddingBottom: 120,
     gap: 10,
   },
@@ -440,73 +286,57 @@ const s = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-
-    backgroundColor: '#FFFFFF',
-
-    borderRadius: 22,
-
+    backgroundColor: '#fff',
+    borderRadius: 18,
     padding: 14,
-
-    borderLeftWidth: 4,
-
-    borderWidth: 1,
-    borderColor: '#EEF2F7',
-
+    borderLeftWidth: 3,
+    borderWidth: 0.5,
+    borderColor: '#F0F0F0',
+    gap: 12,
     shadowColor: '#000',
     shadowOpacity: 0.03,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-
-    elevation: 2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
   },
 
   cardIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 16,
-
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-
-    marginRight: 14,
+    flexShrink: 0,
   },
 
-  cardEmoji: {
-    fontSize: 26,
-  },
+  cardEmoji: { fontSize: 26 },
 
-  cardBody: {
-    flex: 1,
-  },
+  cardBody: { flex: 1 },
 
   cardTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#111827',
-
-    marginBottom: 4,
+    marginBottom: 3,
   },
 
   cardCat: {
     fontSize: 12,
-    color: '#6B7280',
-
+    color: '#9CA3AF',
     marginBottom: 8,
+    fontWeight: '500',
   },
 
   cardBadges: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 6,
+    flexWrap: 'wrap',
   },
 
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 30,
+    borderRadius: 20,
   },
 
   badgeText: {
@@ -516,32 +346,30 @@ const s = StyleSheet.create({
 
   badge911: {
     backgroundColor: '#FEE2E2',
-
     paddingHorizontal: 10,
     paddingVertical: 4,
-
-    borderRadius: 30,
+    borderRadius: 20,
   },
 
   badge911Text: {
     fontSize: 11,
-    fontWeight: '700',
     color: '#991B1B',
+    fontWeight: '700',
   },
 
   chev: {
-    fontSize: 26,
+    fontSize: 22,
     color: '#D1D5DB',
-    marginLeft: 8,
+    flexShrink: 0,
   },
 
   empty: {
     alignItems: 'center',
-    paddingTop: 80,
+    paddingTop: 60,
   },
 
   emptyEmoji: {
-    fontSize: 42,
+    fontSize: 40,
     marginBottom: 12,
   },
 
@@ -549,12 +377,11 @@ const s = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#111827',
-
     marginBottom: 6,
   },
 
   emptyText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: '#9CA3AF',
   },
 });

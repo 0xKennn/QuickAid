@@ -23,7 +23,7 @@ export default function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-
+        tabBarHideOnKeyboard: true,
         tabBarShowLabel: true,
 
         tabBarStyle: {
@@ -142,4 +142,3 @@ export default function MainTabs() {
     </Tab.Navigator>
   );
 }
-

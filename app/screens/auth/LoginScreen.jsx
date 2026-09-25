@@ -128,7 +128,10 @@ export default function LoginScreen({ navigation }) {
             </View>
 
             {/* FORGOT */}
-            <TouchableOpacity style={s.forgotWrap}>
+            <TouchableOpacity
+              style={s.forgotWrap}
+              onPress={() => navigation.navigate('ForgotPassword')}
+            >
               <Text style={s.forgotText}>
                 Forgot Password?
               </Text>
@@ -327,4 +330,3 @@ const s = StyleSheet.create({
     marginLeft: 4,
   },
 });
-

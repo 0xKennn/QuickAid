@@ -8,6 +8,9 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
+  Platform,
+  Linking,
+  Alert,
 } from 'react-native';
 
 import {
@@ -23,6 +26,7 @@ import {
 
 import { useAuth } from '../../context/AuthContext';
 import { logoutUser } from '../../services/auth';
+import { HOTLINES } from '../../data/hotlines';
 
 const TIPS = [
   {
@@ -95,6 +99,15 @@ export default function HomeScreen({ navigation }) {
   const firstName =
     profile?.name?.split(' ')[0] || 'there';
 
+  const drrm = HOTLINES.find(h => h.id === 'h2'); // Command Center (DRRM)
+
+  function callDRRM() {
+    if (!drrm) return;
+    Linking.openURL(`tel:${drrm.number}`).catch(() => {
+      Alert.alert('Unable to call', 'Could not open the phone dialer.');
+    });
+  }
+
   return (
     <SafeAreaView style={s.safe}>
       <StatusBar
@@ -105,8 +118,8 @@ export default function HomeScreen({ navigation }) {
       {/* HEADER */}
       <View style={s.header}>
         <View style={s.headerRow}>
-          <View>
-            <Text style={s.greeting}>
+          <View style={s.greetingWrap}>
+            <Text style={s.greeting} numberOfLines={1} ellipsizeMode="tail">
               Hello, {firstName}
             </Text>
 
@@ -126,6 +139,22 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* QUICK CALL — DRRM */}
+      <TouchableOpacity
+        style={s.quickCallBar}
+        onPress={callDRRM}
+        activeOpacity={0.9}
+      >
+        <View style={s.quickCallIcon}>
+          <Phone size={22} color="#DC2626" />
+        </View>
+        <View style={s.quickCallBody}>
+          <Text style={s.quickCallTitle}>Call DRRM Command Center</Text>
+          <Text style={s.quickCallSub}>{drrm?.number}</Text>
+        </View>
+        <ChevronRight size={20} color="#DC2626" />
+      </TouchableOpacity>
 
       <ScrollView
         style={s.scroll}
@@ -153,7 +182,7 @@ export default function HomeScreen({ navigation }) {
           </View>
 
           <View style={s.statCard}>
-            <Text style={s.statVal}>2</Text>
+            <Text style={s.statVal}>3</Text>
 
             <Text style={s.statLabel}>
               Languages{'\n'}Supported
@@ -443,8 +472,14 @@ const s = StyleSheet.create({
 
   header: {
     paddingHorizontal: 24,
-    paddingTop: 20,
+
+    paddingTop:
+      Platform.OS === 'android'
+        ? (StatusBar.currentHeight || 24) + 8
+        : 20,
+
     paddingBottom: 24,
+
     backgroundColor: '#F4F6F5',
   },
 
@@ -452,6 +487,11 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+
+  greetingWrap: {
+    flex: 1,
+    marginRight: 12,
   },
 
   greeting: {
@@ -473,6 +513,7 @@ const s = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
 
     shadowColor: '#000',
     shadowOpacity: 0.04,
@@ -487,6 +528,51 @@ const s = StyleSheet.create({
 
   scroll: {
     flex: 1,
+  },
+
+  quickCallBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    marginHorizontal: 20,
+    marginBottom: 18,
+    gap: 14,
+    borderLeftWidth: 4,
+    borderLeftColor: '#DC2626',
+
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+
+  quickCallIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  quickCallBody: {
+    flex: 1,
+  },
+
+  quickCallTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#25302B',
+    marginBottom: 4,
+  },
+
+  quickCallSub: {
+    fontSize: 13,
+    color: '#7C8B85',
   },
 
   scrollContent: {
@@ -718,4 +804,3 @@ const s = StyleSheet.create({
     marginLeft: 10,
   },
 });
-

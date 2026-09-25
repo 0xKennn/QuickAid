@@ -13,6 +13,8 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 import { useFocusEffect } from '@react-navigation/native';
@@ -464,142 +466,151 @@ export default function EmergencyContactsScreen({
         visible={modalVisible}
         animationType="slide"
         transparent
+        statusBarTranslucent
+        onRequestClose={() =>
+          setModalVisible(false)
+        }
       >
-        <View style={s.modalOverlay}>
-          <View style={s.modalSheet}>
-            <Text style={s.modalTitle}>
-              {editing
-                ? 'Edit contact'
-                : 'Add emergency contact'}
-            </Text>
+        <KeyboardAvoidingView
+          style={s.keyboardAvoiding}
+          behavior="padding"
+        >
+          <View style={s.modalOverlay}>
+            <View style={s.modalSheet}>
 
-            <Text style={s.fieldLabel}>
-              Name
-            </Text>
+              <Text style={s.modalTitle}>
+                {editing
+                  ? 'Edit contact'
+                  : 'Add emergency contact'}
+              </Text>
 
-            <TextInput
-              style={s.input}
-              value={form.name}
-              onChangeText={t => {
-                formRef.current.name =
-                  t;
-
-                setForm(f => ({
-                  ...f,
-                  name: t,
-                }));
-              }}
-              placeholder="e.g. Sharmaine"
-            />
-
-            <Text style={s.fieldLabel}>
-              Phone number
-            </Text>
-
-            <TextInput
-              style={s.input}
-              value={form.number}
-              onChangeText={t => {
-                formRef.current.number =
-                  t;
-
-                setForm(f => ({
-                  ...f,
-                  number: t,
-                }));
-              }}
-              placeholder="e.g. +63 912 345 6789"
-              keyboardType="phone-pad"
-            />
-
-            <Text style={s.fieldLabel}>
-              Relationship
-            </Text>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={
-                false
-              }
-              style={{
-                marginBottom: 20,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection:
-                    'row',
-                  gap: 8,
-                }}
-              >
-                {RELATIONSHIPS.map(
-                  r => (
-                    <TouchableOpacity
-                      key={r}
-                      style={[
-                        s.relPill,
-                        form.relationship ===
-                          r &&
-                          s.relPillActive,
-                      ]}
-                      onPress={() => {
-                        formRef.current.relationship =
-                          r;
-
-                        setForm(f => ({
-                          ...f,
-                          relationship:
-                            r,
-                        }));
-                      }}
-                    >
-                      <Text
-                        style={[
-                          s.relPillText,
-                          form.relationship ===
-                            r &&
-                            s.relPillTextActive,
-                        ]}
-                      >
-                        {r}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                )}
-              </View>
-            </ScrollView>
-
-            <View style={s.modalBtns}>
-              <TouchableOpacity
-                style={s.cancelBtn}
-                onPress={() =>
-                  setModalVisible(
-                    false
-                  )
+              <ScrollView
+                style={s.modalScroll}
+                contentContainerStyle={
+                  s.modalScrollContent
                 }
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
               >
-                <Text
-                  style={
-                    s.cancelBtnText
-                  }
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity
-                style={s.saveBtn}
-                onPress={handleSave}
-              >
-                <Text
-                  style={s.saveBtnText}
-                >
-                  Save contact
+                {/* Name */}
+                <Text style={s.fieldLabel}>
+                  Name
                 </Text>
-              </TouchableOpacity>
+
+                <TextInput
+                  style={s.input}
+                  value={form.name}
+                  onChangeText={t => {
+                    formRef.current.name = t;
+
+                    setForm(f => ({
+                      ...f,
+                      name: t,
+                    }));
+                  }}
+                  placeholder="e.g. Sharmaine"
+                  placeholderTextColor="#999"
+                  returnKeyType="next"
+                />
+
+                {/* Phone */}
+                <Text style={s.fieldLabel}>
+                  Phone number
+                </Text>
+
+                <TextInput
+                  style={s.input}
+                  value={form.number}
+                  onChangeText={t => {
+                    formRef.current.number = t;
+
+                    setForm(f => ({
+                      ...f,
+                      number: t,
+                    }));
+                  }}
+                  placeholder="e.g. +63 912 345 6789"
+                  placeholderTextColor="#999"
+                  keyboardType="phone-pad"
+                  returnKeyType="done"
+                />
+
+                {/* Relationship */}
+                <Text style={s.fieldLabel}>
+                  Relationship
+                </Text>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  style={s.relationshipScroll}
+                >
+                  <View style={s.relationshipRow}>
+                    {RELATIONSHIPS.map(r => (
+                      <TouchableOpacity
+                        key={r}
+                        style={[
+                          s.relPill,
+                          form.relationship === r &&
+                            s.relPillActive,
+                        ]}
+                        onPress={() => {
+                          formRef.current.relationship =
+                            r;
+
+                          setForm(f => ({
+                            ...f,
+                            relationship: r,
+                          }));
+                        }}
+                      >
+                        <Text
+                          style={[
+                            s.relPillText,
+                            form.relationship === r &&
+                              s.relPillTextActive,
+                          ]}
+                        >
+                          {r}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+
+                {/* Buttons */}
+                <View style={s.modalBtns}>
+
+                  <TouchableOpacity
+                    style={s.cancelBtn}
+                    onPress={() =>
+                      setModalVisible(false)
+                    }
+                  >
+                    <Text style={s.cancelBtnText}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={s.saveBtn}
+                    onPress={handleSave}
+                  >
+                    <Text style={s.saveBtnText}>
+                      Save contact
+                    </Text>
+                  </TouchableOpacity>
+
+                </View>
+
+              </ScrollView>
+
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -609,6 +620,10 @@ const s = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+
+  keyboardAvoiding: {
+      flex: 1,
   },
 
   header: {
@@ -826,22 +841,18 @@ const s = StyleSheet.create({
     lineHeight: 20,
   },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor:
-      'rgba(0,0,0,0.4)',
-
-    justifyContent: 'flex-end',
-  },
-
   modalSheet: {
+    width: '100%',
     backgroundColor: '#fff',
 
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
 
-    padding: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 20,
+
+    maxHeight: '75%',
   },
 
   modalTitle: {
@@ -906,7 +917,7 @@ const s = StyleSheet.create({
   modalBtns: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 8,
+    marginTop: 16,
   },
 
   cancelBtn: {
@@ -944,4 +955,31 @@ const s = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+
+  modalScroll: {
+    flexGrow: 0,
+    width: '100%',
+  },
+
+  modalScrollContent: {
+    paddingBottom: 20,
+  },
+
+  relationshipScroll: {
+    marginTop: 0,
+    marginBottom: 8,
+  },
+
+  relationshipRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  justifyContent: 'flex-end',
+},
+
+
 });
