@@ -25,6 +25,8 @@ import {
   Trash2,
   User,
   ShieldAlert,
+  MessageSquareWarning,
+  Check,
 } from 'lucide-react-native';
 
 import { HOTLINES } from '../../data/hotlines';
@@ -33,6 +35,8 @@ import {
   saveContact,
   deleteContact,
 } from '../../services/contacts';
+import { sendEmergencySMS, EMERGENCY_TYPES } from '../../services/sms';
+import { useAuth } from '../../context/AuthContext';
 
 const RELATIONSHIPS = [
   'Mother',
@@ -50,6 +54,8 @@ const RELATIONSHIPS = [
 export default function EmergencyContactsScreen({
   navigation,
 }) {
+  const { profile } = useAuth();
+
   const [contacts, setContacts] =
     useState([]);
 
@@ -76,6 +82,12 @@ export default function EmergencyContactsScreen({
     number: '',
     relationship: 'Mother',
   });
+
+  // Emergency SMS state
+  const [smsModalVisible, setSmsModalVisible] = useState(false);
+  const [smsType, setSmsType] = useState(EMERGENCY_TYPES[0]);
+  const [selectedRecipients, setSelectedRecipients] = useState({}); // { number: true }
+  const [sendingSms, setSendingSms] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -200,6 +212,49 @@ export default function EmergencyContactsScreen({
         }
       }
     );
+  }
+
+  // ── Emergency SMS ──────────────────────────────────────────────
+
+  function openSmsModal() {
+    setSmsType(EMERGENCY_TYPES[0]);
+    setSelectedRecipients({});
+    setSmsModalVisible(true);
+  }
+
+  function toggleRecipient(number) {
+    const key = number.replace(/\s+/g, '');
+    setSelectedRecipients(prev => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  }
+
+  async function handleSendSms() {
+    const recipients = Object.keys(selectedRecipients).filter(
+      k => selectedRecipients[k]
+    );
+
+    if (recipients.length === 0) {
+      Alert.alert('No recipients selected', 'Choose at least one contact to send to.');
+      return;
+    }
+
+    setSendingSms(true);
+    const res = await sendEmergencySMS({
+      senderName: profile?.name,
+      emergencyType: smsType,
+      recipients,
+    });
+    setSendingSms(false);
+
+    if (!res.success) {
+      Alert.alert('Could not send SMS', res.error || 'Unknown error.');
+      return;
+    }
+
+    setSmsModalVisible(false);
+    Alert.alert('Sent', 'Your emergency message is on its way to the selected contacts.');
   }
 
   function ContactCard({
@@ -337,6 +392,23 @@ export default function EmergencyContactsScreen({
         </Text>
       </View>
 
+      {/* Emergency SMS trigger */}
+      <TouchableOpacity
+        style={s.smsBar}
+        onPress={openSmsModal}
+        activeOpacity={0.9}
+      >
+        <View style={s.smsIcon}>
+          <MessageSquareWarning size={20} color="#B91C1C" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.smsTitle}>Send Emergency SMS</Text>
+          <Text style={s.smsSub}>
+            Alerts selected contacts with your location
+          </Text>
+        </View>
+      </TouchableOpacity>
+
       {/* Tabs */}
       <View style={s.tabRow}>
         <TouchableOpacity
@@ -461,7 +533,7 @@ export default function EmergencyContactsScreen({
         </TouchableOpacity>
       )}
 
-      {/* Modal */}
+      {/* Add/Edit contact modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -612,6 +684,131 @@ export default function EmergencyContactsScreen({
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Emergency SMS modal */}
+      <Modal
+        visible={smsModalVisible}
+        animationType="slide"
+        transparent
+        statusBarTranslucent
+        onRequestClose={() => setSmsModalVisible(false)}
+      >
+        <KeyboardAvoidingView style={s.keyboardAvoiding} behavior="padding">
+          <View style={s.modalOverlay}>
+            <View style={s.modalSheet}>
+              <Text style={s.modalTitle}>Send Emergency SMS</Text>
+
+              <ScrollView
+                style={s.modalScroll}
+                contentContainerStyle={s.modalScrollContent}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
+              >
+                {/* Emergency type */}
+                <Text style={s.fieldLabel}>Emergency type</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={s.relationshipScroll}
+                >
+                  <View style={s.relationshipRow}>
+                    {EMERGENCY_TYPES.map(t => (
+                      <TouchableOpacity
+                        key={t}
+                        style={[s.relPill, smsType === t && s.relPillActive]}
+                        onPress={() => setSmsType(t)}
+                      >
+                        <Text style={[s.relPillText, smsType === t && s.relPillTextActive]}>
+                          {t}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+
+                {/* Recipients: personal contacts */}
+                <Text style={s.fieldLabel}>Your contacts</Text>
+                {contacts.length === 0 ? (
+                  <Text style={s.smsEmptyHint}>
+                    No personal contacts saved yet.
+                  </Text>
+                ) : (
+                  contacts.map(c => {
+                    const key = c.number.replace(/\s+/g, '');
+                    const checked = !!selectedRecipients[key];
+                    return (
+                      <TouchableOpacity
+                        key={c.id}
+                        style={s.recipientRow}
+                        onPress={() => toggleRecipient(c.number)}
+                      >
+                        <View style={[s.checkbox, checked && s.checkboxChecked]}>
+                          {checked && <Check size={14} color="#fff" />}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={s.recipientName}>{c.name}</Text>
+                          <Text style={s.recipientSub}>{c.relationship} · {c.number}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+
+                {/* Recipients: hotlines */}
+                <Text style={[s.fieldLabel, { marginTop: 20 }]}>Hotlines</Text>
+                {HOTLINES.map(h => {
+                  const key = h.number.replace(/\s+/g, '');
+                  const checked = !!selectedRecipients[key];
+                  return (
+                    <TouchableOpacity
+                      key={h.id}
+                      style={s.recipientRow}
+                      onPress={() => toggleRecipient(h.number)}
+                    >
+                      <View style={[s.checkbox, checked && s.checkboxChecked]}>
+                        {checked && <Check size={14} color="#fff" />}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.recipientName}>{h.name}</Text>
+                        <Text style={s.recipientSub}>{h.category} · {h.number}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+
+                <Text style={s.smsNote}>
+                  Your current location will be attached automatically.
+                  The message is sent directly through QuickAid — no
+                  mobile load or SMS balance needed on your end.
+                </Text>
+
+                {/* Buttons */}
+                <View style={s.modalBtns}>
+                  <TouchableOpacity
+                    style={s.cancelBtn}
+                    onPress={() => setSmsModalVisible(false)}
+                    disabled={sendingSms}
+                  >
+                    <Text style={s.cancelBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[s.saveBtn, { backgroundColor: '#B91C1C' }]}
+                    onPress={handleSendSms}
+                    disabled={sendingSms}
+                  >
+                    {sendingSms ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={s.saveBtnText}>Send SMS Now</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -656,6 +853,46 @@ const s = StyleSheet.create({
     fontSize: 13,
     color: '#888',
     marginTop: 2,
+  },
+
+  smsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 20,
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 0.5,
+    borderColor: '#F0F0F0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#B91C1C',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+
+  smsIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  smsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111',
+    marginBottom: 2,
+  },
+
+  smsSub: {
+    fontSize: 12,
+    color: '#888',
   },
 
   tabRow: {
@@ -946,6 +1183,7 @@ const s = StyleSheet.create({
     borderRadius: 10,
 
     alignItems: 'center',
+    justifyContent: 'center',
 
     backgroundColor: '#1D9E75',
   },
@@ -973,6 +1211,54 @@ const s = StyleSheet.create({
   relationshipRow: {
     flexDirection: 'row',
     gap: 8,
+  },
+
+  recipientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+  },
+
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#CCC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  checkboxChecked: {
+    backgroundColor: '#B91C1C',
+    borderColor: '#B91C1C',
+  },
+
+  recipientName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111',
+  },
+
+  recipientSub: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 1,
+  },
+
+  smsEmptyHint: {
+    fontSize: 13,
+    color: '#999',
+    fontStyle: 'italic',
+    paddingVertical: 6,
+  },
+
+  smsNote: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 18,
+    lineHeight: 18,
   },
 
 modalOverlay: {
