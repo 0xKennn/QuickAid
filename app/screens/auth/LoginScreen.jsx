@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   SafeAreaView,
   StatusBar,
   KeyboardAvoidingView,
@@ -30,18 +29,46 @@ export default function LoginScreen({ navigation }) {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Error states
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  function clearErrors() {
+    setEmailError('');
+    setPasswordError('');
+  }
+
   async function handleLogin() {
-    if (!email || !password) {
-      Alert.alert('Missing fields', 'Please enter your email and password.');
+    // Clear previous errors
+    setEmailError('');
+    setPasswordError('');
+
+    let hasError = false;
+
+    // Check email
+    if (!email.trim()) {
+      setEmailError('Please enter your email address.');
+      hasError = true;
+    }
+
+    // Check password
+    if (!password) {
+      setPasswordError('Please enter your password.');
+      hasError = true;
+    }
+
+    // Stop here if there are empty fields
+    if (hasError) {
       return;
     }
 
     setLoading(true);
 
     try {
-      await loginUser(email, password);
+      await loginUser(email.trim(), password);
     } catch (err) {
-      Alert.alert('Login failed', err.message);
+      // Show login error below the password field
+      setPasswordError('Incorrect email or password.');
     } finally {
       setLoading(false);
     }
@@ -87,13 +114,24 @@ export default function LoginScreen({ navigation }) {
             {/* EMAIL */}
             <Text style={s.fieldLabel}>EMAIL ADDRESS</Text>
 
-            <View style={s.fieldWrap}>
-              <Mail size={18} color="#94A3B8" />
+            <View
+              style={[
+                s.fieldWrap,
+                emailError && s.fieldError,
+              ]}
+            >
+              <Mail
+                size={18}
+                color={emailError ? '#DC2626' : '#94A3B8'}
+              />
 
               <TextInput
                 style={s.fieldInput}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  clearErrors();
+                }}
                 placeholder="Enter your email"
                 placeholderTextColor="#A0A0A0"
                 keyboardType="email-address"
@@ -101,16 +139,33 @@ export default function LoginScreen({ navigation }) {
               />
             </View>
 
+            {emailError ? (
+              <Text style={s.errorText}>
+                {emailError}
+              </Text>
+            ) : null}
+
             {/* PASSWORD */}
             <Text style={s.fieldLabel}>PASSWORD</Text>
 
-            <View style={s.fieldWrap}>
-              <Lock size={18} color="#94A3B8" />
+            <View
+              style={[
+                s.fieldWrap,
+                passwordError && s.fieldError,
+              ]}
+            >
+              <Lock
+                size={18}
+                color={passwordError ? '#DC2626' : '#94A3B8'}
+              />
 
               <TextInput
                 style={s.fieldInput}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  clearErrors();
+                }}
                 placeholder="Enter your password"
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry={!showPass}
@@ -120,12 +175,24 @@ export default function LoginScreen({ navigation }) {
                 onPress={() => setShowPass(!showPass)}
               >
                 {showPass ? (
-                  <EyeOff size={18} color="#94A3B8" />
+                  <EyeOff
+                    size={18}
+                    color={passwordError ? '#DC2626' : '#94A3B8'}
+                  />
                 ) : (
-                  <Eye size={18} color="#94A3B8" />
+                  <Eye
+                    size={18}
+                    color={passwordError ? '#DC2626' : '#94A3B8'}
+                  />
                 )}
               </TouchableOpacity>
             </View>
+
+            {passwordError ? (
+              <Text style={s.errorText}>
+                {passwordError}
+              </Text>
+            ) : null}
 
             {/* FORGOT */}
             <TouchableOpacity
@@ -217,8 +284,8 @@ const s = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    borderRadius: 32,
+    marginHorizontal: 0,
+    borderRadius: 40,
     paddingHorizontal: 22,
     paddingTop: 30,
     paddingBottom: 36,
@@ -239,6 +306,7 @@ const s = StyleSheet.create({
     fontWeight: '800',
     color: '#25302B',
     marginBottom: 8,
+    textAlign: 'center',
   },
 
   formSub: {
@@ -246,6 +314,7 @@ const s = StyleSheet.create({
     color: '#8B9590',
     marginBottom: 30,
     lineHeight: 20,
+    textAlign: 'center',
   },
 
   fieldLabel: {
@@ -266,15 +335,28 @@ const s = StyleSheet.create({
     borderColor: '#DFE7E3',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 18,
-    marginLeft: 12
+    marginLeft: 12,
+  },
+
+  fieldError: {
+    borderColor: '#DC2626',
+    borderWidth: 1.5,
+    backgroundColor: '#FEF2F2',
   },
 
   fieldInput: {
-  flex: 1,
-  fontSize: 15,
-  color: '#25302B',
-  marginLeft: 12,
-},
+    flex: 1,
+    fontSize: 15,
+    color: '#25302B',
+    marginLeft: 12,
+  },
+
+  errorText: {
+    color: '#DC2626',
+    fontSize: 12,
+    marginTop: 6,
+    marginLeft: 14,
+  },
 
   forgotWrap: {
     alignItems: 'flex-end',
@@ -330,3 +412,5 @@ const s = StyleSheet.create({
     marginLeft: 4,
   },
 });
+
+

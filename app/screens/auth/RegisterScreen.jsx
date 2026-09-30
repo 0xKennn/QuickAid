@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-
 import {
   View,
   Text,
@@ -7,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   SafeAreaView,
   StatusBar,
   KeyboardAvoidingView,
@@ -28,9 +26,9 @@ import {
 
 import { registerUser } from '../../services/auth';
 
-// ─── PHONE FORMATTING & VALIDATION ────────────────────────
 
-/** Strips non-digits, converts +63 → 09, then formats as 4-3-4 */
+// ─── PHONE FORMATTING & VALIDATION ─────────────────────────
+
 function formatPhone(text) {
   let digits = text.replace(/\D/g, '');
 
@@ -44,9 +42,11 @@ function formatPhone(text) {
 
   // 4-3-4 spacing
   if (digits.length <= 4) return digits;
+
   if (digits.length <= 7) {
     return digits.slice(0, 4) + ' ' + digits.slice(4);
   }
+
   return (
     digits.slice(0, 4) +
     ' ' +
@@ -56,29 +56,67 @@ function formatPhone(text) {
   );
 }
 
-/** Returns error string or empty string if valid */
+
 function validatePhone(formatted) {
   const digits = formatted.replace(/\D/g, '');
+
   if (!digits) return 'Phone number is required';
   if (digits.length < 11) return 'Phone number is incomplete';
   if (!digits.startsWith('09')) return 'Phone number must start with 09';
   if (digits.length !== 11) return 'Phone number must be 11 digits';
+
   return '';
 }
 
-// ─── NAME VALIDATION ──────────────────────────────────────
 
-/** Strips everything except letters and spaces */
+// ─── NAME VALIDATION ───────────────────────────────────────
+
 function sanitizeName(text) {
   return text.replace(/[^a-zA-Z\s]/g, '');
 }
 
+
 function validateName(value) {
   if (!value.trim()) return 'Full name is required';
   if (value.trim().length < 2) return 'Name is too short';
+
   return '';
 }
-// ─────────────────────────────────────────────────────────
+
+
+// ─── EMAIL VALIDATION ──────────────────────────────────────
+
+function validateEmail(value) {
+  if (!value.trim()) {
+    return 'Email address is required';
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(value.trim())) {
+    return 'Please enter a valid email address';
+  }
+
+  return '';
+}
+
+
+// ─── PASSWORD VALIDATION ───────────────────────────────────
+
+function validatePassword(value) {
+  if (!value) {
+    return 'Password is required';
+  }
+
+  if (value.length < 6) {
+    return 'Password must be at least 6 characters';
+  }
+
+  return '';
+}
+
+
+// ───────────────────────────────────────────────────────────
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -90,50 +128,94 @@ export default function RegisterScreen({ navigation }) {
 
   // Validation states
   const [nameError, setNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  // Registration/API error
+  const [registerError, setRegisterError] = useState('');
+
+
+  // ─── CLEAR ALL ERRORS ────────────────────────────────────
+
+  function clearErrors() {
+    setNameError('');
+    setEmailError('');
+    setPhoneError('');
+    setPasswordError('');
+    setRegisterError('');
+  }
+
+
+  // ─── NAME CHANGE ─────────────────────────────────────────
 
   function handleNameChange(text) {
     const sanitized = sanitizeName(text);
+
     setName(sanitized);
 
-    if (nameError) {
-      setNameError(validateName(sanitized));
-    }
+    // Typing in ANY field clears ALL errors
+    clearErrors();
   }
+
+
+  // ─── EMAIL CHANGE ────────────────────────────────────────
+
+  function handleEmailChange(text) {
+    setEmail(text);
+
+    // Typing in ANY field clears ALL errors
+    clearErrors();
+  }
+
+
+  // ─── PHONE CHANGE ────────────────────────────────────────
 
   function handlePhoneChange(text) {
     const formatted = formatPhone(text);
+
     setPhone(formatted);
 
-    const digits = formatted.replace(/\D/g, '');
-
-    // Only show error once they've typed enough to know it's wrong
-    if (digits.length >= 11) {
-      setPhoneError(validatePhone(formatted));
-    } else if (digits.length >= 2 && !digits.startsWith('09')) {
-      setPhoneError('Phone number must start with 09');
-    } else {
-      setPhoneError('');
-    }
+    // Typing in ANY field clears ALL errors
+    clearErrors();
   }
 
+
+  // ─── PASSWORD CHANGE ────────────────────────────────────
+
+  function handlePasswordChange(text) {
+    setPassword(text);
+
+    // Typing in ANY field clears ALL errors
+    clearErrors();
+  }
+
+
+  // ─── REGISTER ────────────────────────────────────────────
+
   async function handleRegister() {
+    // Clear old errors first
+    clearErrors();
+
+    // Validate every field
     const nameErr = validateName(name);
+    const emailErr = validateEmail(email);
     const phoneErr = validatePhone(phone);
+    const passwordErr = validatePassword(password);
 
+    // Set all applicable errors
     if (nameErr) setNameError(nameErr);
+    if (emailErr) setEmailError(emailErr);
     if (phoneErr) setPhoneError(phoneErr);
+    if (passwordErr) setPasswordError(passwordErr);
 
-    if (!name.trim() || !email || !password) {
-      Alert.alert('Missing fields', 'Please fill in all required fields.');
-      return;
-    }
-
-    if (nameErr || phoneErr) {
-      Alert.alert(
-        'Invalid Input',
-        nameErr || phoneErr
-      );
+    // Stop if there are validation errors
+    if (
+      nameErr ||
+      emailErr ||
+      phoneErr ||
+      passwordErr
+    ) {
       return;
     }
 
@@ -141,20 +223,29 @@ export default function RegisterScreen({ navigation }) {
 
     try {
       const cleanPhone = phone.replace(/\D/g, '');
-      await registerUser(email, password, {
+
+      await registerUser(email.trim(), password, {
         name: name.trim(),
         phone: cleanPhone,
       });
+
     } catch (err) {
-      Alert.alert('Registration failed', err.message);
+      // Show registration error inside the form
+      setRegisterError(
+        err?.message || 'Unable to create your account. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
   }
 
+
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F6F5" />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#F4F6F5"
+      />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -165,41 +256,49 @@ export default function RegisterScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+
           {/* HERO */}
           <View style={s.hero}>
+
             <View style={s.logoBox}>
               <Heart size={32} color="#5DBB9A" />
             </View>
 
-            <Text style={s.appName}>Create Account</Text>
+            <Text style={s.appName}>
+              Create Account
+            </Text>
 
             <Text style={s.appTagline}>
               Join QuickAid and access AI-powered emergency medical assistance.
             </Text>
+
           </View>
+
 
           {/* CARD */}
           <View style={s.card}>
+
             {/* STEP INDICATOR */}
             <View style={s.stepRow}>
               <View style={[s.stepDot, s.stepActive]} />
               <View style={s.stepDot} />
             </View>
 
+
             {/* FULL NAME */}
-            <Text style={s.fieldLabel}>FULL NAME</Text>
+            <Text style={s.fieldLabel}>
+              FULL NAME
+            </Text>
 
             <View
               style={[
                 s.fieldWrap,
-                nameError
-                  ? { borderColor: '#E74C3C', backgroundColor: '#FDF2F2' }
-                  : null,
+                nameError && s.fieldError,
               ]}
             >
               <User
                 size={18}
-                color={nameError ? '#E74C3C' : '#94A3B8'}
+                color={nameError ? '#DC2626' : '#94A3B8'}
               />
 
               <TextInput
@@ -212,16 +311,33 @@ export default function RegisterScreen({ navigation }) {
               />
             </View>
 
-            {/* EMAIL */}
-            <Text style={s.fieldLabel}>EMAIL ADDRESS</Text>
+            {nameError ? (
+              <Text style={s.errorText}>
+                {nameError}
+              </Text>
+            ) : null}
 
-            <View style={s.fieldWrap}>
-              <Mail size={18} color="#94A3B8" />
+
+            {/* EMAIL */}
+            <Text style={s.fieldLabel}>
+              EMAIL ADDRESS
+            </Text>
+
+            <View
+              style={[
+                s.fieldWrap,
+                emailError && s.fieldError,
+              ]}
+            >
+              <Mail
+                size={18}
+                color={emailError ? '#DC2626' : '#94A3B8'}
+              />
 
               <TextInput
                 style={s.fieldInput}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={handleEmailChange}
                 placeholder="you@example.com"
                 placeholderTextColor="#A0A0A0"
                 keyboardType="email-address"
@@ -229,20 +345,27 @@ export default function RegisterScreen({ navigation }) {
               />
             </View>
 
+            {emailError ? (
+              <Text style={s.errorText}>
+                {emailError}
+              </Text>
+            ) : null}
+
+
             {/* PHONE */}
-            <Text style={s.fieldLabel}>PHONE NUMBER</Text>
+            <Text style={s.fieldLabel}>
+              PHONE NUMBER
+            </Text>
 
             <View
               style={[
                 s.fieldWrap,
-                phoneError
-                  ? { borderColor: '#E74C3C', backgroundColor: '#FDF2F2' }
-                  : null,
+                phoneError && s.fieldError,
               ]}
             >
               <Phone
                 size={18}
-                color={phoneError ? '#E74C3C' : '#94A3B8'}
+                color={phoneError ? '#DC2626' : '#94A3B8'}
               />
 
               <TextInput
@@ -256,69 +379,133 @@ export default function RegisterScreen({ navigation }) {
               />
             </View>
 
-            {/* PASSWORD */}
-            <Text style={s.fieldLabel}>PASSWORD</Text>
+            {phoneError ? (
+              <Text style={s.errorText}>
+                {phoneError}
+              </Text>
+            ) : null}
 
-            <View style={s.fieldWrap}>
-              <Lock size={18} color="#94A3B8" />
+
+            {/* PASSWORD */}
+            <Text style={s.fieldLabel}>
+              PASSWORD
+            </Text>
+
+            <View
+              style={[
+                s.fieldWrap,
+                passwordError && s.fieldError,
+              ]}
+            >
+              <Lock
+                size={18}
+                color={passwordError ? '#DC2626' : '#94A3B8'}
+              />
 
               <TextInput
                 style={s.fieldInput}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={handlePasswordChange}
                 placeholder="Create a password"
                 placeholderTextColor="#A0A0A0"
                 secureTextEntry={!showPass}
               />
 
-              <TouchableOpacity onPress={() => setShowPass(!showPass)}>
+              <TouchableOpacity
+                onPress={() => setShowPass(!showPass)}
+              >
                 {showPass ? (
-                  <EyeOff size={18} color="#94A3B8" />
+                  <EyeOff
+                    size={18}
+                    color={passwordError ? '#DC2626' : '#94A3B8'}
+                  />
                 ) : (
-                  <Eye size={18} color="#94A3B8" />
+                  <Eye
+                    size={18}
+                    color={passwordError ? '#DC2626' : '#94A3B8'}
+                  />
                 )}
               </TouchableOpacity>
             </View>
 
+            {passwordError ? (
+              <Text style={s.errorText}>
+                {passwordError}
+              </Text>
+            ) : null}
+
+
+            {/* REGISTRATION ERROR */}
+            {registerError ? (
+              <Text style={s.registerErrorText}>
+                {registerError}
+              </Text>
+            ) : null}
+
+
             {/* NOTICE */}
             <View style={s.noticeBox}>
-              <ShieldCheck size={18} color="#5DBB9A" />
+
+              <ShieldCheck
+                size={18}
+                color="#5DBB9A"
+              />
 
               <Text style={s.noticeText}>
                 QuickAid is designed for emergency response teams and healthcare
                 professionals.
               </Text>
+
             </View>
+
 
             {/* BUTTON */}
             <TouchableOpacity
-              style={[s.btnPrimary, loading && { opacity: 0.7 }]}
+              style={[
+                s.btnPrimary,
+                loading && { opacity: 0.7 },
+              ]}
               onPress={handleRegister}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={s.btnPrimaryText}>Create Account</Text>
+                <Text style={s.btnPrimaryText}>
+                  Create Account
+                </Text>
               )}
             </TouchableOpacity>
 
+
             {/* FOOTER */}
             <View style={s.bottomRow}>
-              <Text style={s.bottomText}>Already have an account?</Text>
 
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={s.bottomLink}>Sign In</Text>
+              <Text style={s.bottomText}>
+                Already have an account?
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Login')}
+              >
+                <Text style={s.bottomLink}>
+                  Sign In
+                </Text>
               </TouchableOpacity>
+
             </View>
+
           </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+
 const s = StyleSheet.create({
+
   safe: {
     flex: 1,
     backgroundColor: '#F4F6F5',
@@ -326,7 +513,7 @@ const s = StyleSheet.create({
 
   hero: {
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 40,
     paddingBottom: 30,
     paddingHorizontal: 24,
   },
@@ -415,6 +602,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 18,
   },
 
+  fieldError: {
+    borderColor: '#DC2626',
+    borderWidth: 1.5,
+    backgroundColor: '#FEF2F2',
+  },
+
   fieldInput: {
     flex: 1,
     fontSize: 15,
@@ -426,14 +619,14 @@ const s = StyleSheet.create({
     marginTop: 6,
     marginLeft: 4,
     fontSize: 12,
-    color: '#E74C3C',
+    color: '#DC2626',
   },
 
-  hintText: {
-    marginTop: 6,
-    marginLeft: 4,
+  registerErrorText: {
+    marginTop: 12,
     fontSize: 12,
-    color: '#A0A0A0',
+    color: '#DC2626',
+    textAlign: 'center',
   },
 
   noticeBox: {
@@ -496,4 +689,5 @@ const s = StyleSheet.create({
     color: '#5DBB9A',
     marginLeft: 4,
   },
+
 });
