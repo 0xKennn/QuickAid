@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "assetBundlePatterns": [
       "**/*",
       "assets/model/*"
@@ -35,15 +35,34 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "scheme": "quickaid",
     "plugins": [
       "expo-localization",
       "expo-font",
       "expo-asset",
+      "expo-notifications",
       [
         "expo-speech-recognition",
         {
           "microphonePermission": "Allow QuickAid to use the microphone for voice commands",
           "speechRecognitionPermission": "Allow QuickAid to use speech recognition for hands-free guidance"
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "QuickAid",
+              "label": "QuickAid Emergency",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "description": "Quick access to emergency calling and first aid categories",
+              "updatePeriodMillis": 0
+            }
+          ]
         }
       ]
     ]

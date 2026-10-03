@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { logoutUser } from '../../services/auth';
 import { HOTLINES } from '../../data/hotlines';
+import { showQuickAccessNotification } from '../../services/notifications';
 
 const TIPS = [
   {
@@ -94,6 +95,10 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     const dayIndex = new Date().getDate() % TIPS.length;
     setTip(TIPS[dayIndex]);
+  }, []);
+
+  useEffect(() => {
+    showQuickAccessNotification();
   }, []);
 
   const firstName =

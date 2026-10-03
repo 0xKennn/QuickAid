@@ -14,6 +14,23 @@ import GuideDetailScreen       from '../screens/firstaid/GuideDetailScreen';
 
 const Stack = createStackNavigator();
 
+const linking = {
+  prefixes: ['quickaid://'],
+  config: {
+    screens: {
+      MainApp: {
+        screens: {
+          'First Aid': {
+            screens: {
+              Library: 'category/:categoryId',
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
 export default function AppNavigator() {
   const { user, loading } = useAuth();
 
@@ -26,7 +43,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
           <>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,19 @@ import { Search } from 'lucide-react-native';
 import { CATEGORIES } from '../../data/categories';
 import { GUIDES } from '../../data/guides';
 
-export default function FirstAidLibraryScreen({ navigation }) {
+export default function FirstAidLibraryScreen({ navigation, route }) {
   const [search, setSearch]         = useState('');
-  const [selectedCat, setSelectedCat] = useState(null);
+  const [selectedCat, setSelectedCat] = useState(route.params?.categoryId || null);
+
+  // If this screen is already mounted and a new deep link arrives
+  // (e.g. tapping a different widget shortcut while the app is open),
+  // React Navigation updates route.params rather than remounting —
+  // so we need to react to that change explicitly.
+  useEffect(() => {
+    if (route.params?.categoryId) {
+      setSelectedCat(route.params.categoryId);
+    }
+  }, [route.params?.categoryId]);
 
   const filtered = GUIDES.filter(g => {
     const matchesCat = selectedCat
