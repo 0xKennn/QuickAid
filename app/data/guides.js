@@ -145,12 +145,14 @@ export const GUIDES = [
       en: {
         overview: 'Deep wounds with heavy bleeding that may require stitches or professional treatment.',
         steps: [
-          'Call emergency services if bleeding is severe and uncontrolled.',
-          'Apply firm, direct pressure to the wound using a clean cloth.',
-          'Do not remove the cloth if it becomes soaked — add more on top.',
-          'If possible, raise the injured limb above heart level.',
-          'Do not attempt to remove embedded objects from the wound.',
-          'Keep applying pressure until emergency help arrives.',
+        'Call emergency services (911) immediately for severe, continuous, or spurting bleeding, or if the wound is deep or you are unsure how serious it is.',
+        'If available, put on disposable gloves or use a barrier to avoid direct contact with blood.',
+        'Apply firm, steady direct pressure to the wound using sterile gauze or a clean cloth. Keep pressing until the bleeding stops or emergency help takes over.',
+        'If blood soaks through the dressing, do not remove the original dressing. Add more gauze or cloth on top and continue applying firm pressure.',
+        'If the bleeding is life-threatening and is from an arm or leg, use a commercially manufactured tourniquet if one is available and you know how to use it. Follow the tourniquet instructions and do not loosen or remove it once applied.',
+        'If an object is deeply embedded in the wound, do not remove it and do not press directly on it. Apply pressure around the object and stabilize it with dressings if possible.',
+        'Keep the injured person still, warm, and as comfortable as possible. Reassure them while waiting for emergency help.',
+        'Monitor breathing and responsiveness continuously. If the person stops breathing normally, begin CPR if you are trained and it is safe to do so.'
         ],
       },
       fil: {
